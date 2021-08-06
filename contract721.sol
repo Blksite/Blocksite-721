@@ -4,13 +4,28 @@ pragma solidity ^0.7.0;
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v3.4/contracts/token/ERC721/ERC721.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v3.4/contracts/utils/Counters.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v3.4/contracts/access/Ownable.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721Holder.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/IERC721Receiver.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/introspection/ERC165.sol";
 
-contract Blocksite721 is ERC721 {
-  mapping(address => uint) tokens;
-  function approval(address _owner, address _approved,uint _tokenId){
+contract Blocksite721 is ERC721, Ownable {
+  	using Counters for Counters.Counter;
+  	Counters.Counter private _tokenIds;
+
+  	constructor() ERC721("Blocksite721", "BLK") {}
+
+	interface ERC721Metadata {
+    		function name() external view returns (string name);
+    		function symbol() external view returns (string symbol);
+    		function tokenURI(uint256 tokenId) external view returns (string);
+	}
+	
+  	mapping(address => uint) tokens;
+  	function approval(address _owner, address _approved,uint _tokenId){
 		require(tokens[_owner]==_tokenId);
 		tokens[_approved]=_tokenId;
 	}
+	
 	function transfer(address _to, uint _amount) public payable{
 		require(_amount <= tokens[msg.sender]);
 		tokens[msg.sender]-=_amount;
@@ -31,6 +46,13 @@ contract Blocksite721 is ERC721 {
 		require(tokens[msg.sender]==_tokenId);
 		tokens[_approved]=_tokenId;
 	}
-	function mint(address _to, uint _tokenId,) public{
-		tokens[_to] = 'mytoken '+str(uint(blockhash(block.number - 1)));
+	function mint(address receiver, string memory tokenURI) external onlyOwner returns (uint256) {
+		_tokenIds.increment();
+
+        	uint256 newNftTokenId = _tokenIds.current();
+        	_mint(receiver, newNftTokenId);
+        	_setTokenURI(newNftTokenId, tokenURI);
+
+        	return newNftTokenId;
+		// tokens[_to] = 'Blocksite '+str(uint(blockhash(block.number - 1)));
 	}
